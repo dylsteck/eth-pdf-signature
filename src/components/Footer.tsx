@@ -39,19 +39,16 @@ export function Footer() {
   return (
     <Wrapper>
       <Links>
-        <Link href="https://gregskril.com/" target="_blank">
-          Link 1
+        <Link href="https://www.tayyabh.com/" target="_blank">
+          Tayyab Hussain
         </Link>
         <Link href="https://gregskril.com/" target="_blank">
-          Link 2
+          Dylan Steck
         </Link>
       </Links>
 
       <Links>
-        <Link href="https://twitter.com/gregskril" target="_blank">
-          <TwitterIcon />
-        </Link>
-        <Link href="https://github.com/gskril/web3-starter" target="_blank">
+        <Link href="https://github.com/dylsteck/eth-pdf-signature" target="_blank">
           <GithubIcon />
         </Link>
       </Links>

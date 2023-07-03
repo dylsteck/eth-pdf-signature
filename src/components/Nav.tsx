@@ -17,7 +17,7 @@ const Title = styled.span`
 export function Nav() {
   return (
     <Wrapper>
-      <Title>Web3 Starter</Title>
+      <Title>Web3 Sign a PDF</Title>
       <ConnectButton chainStatus="none" showBalance={false} />
     </Wrapper>
   )
