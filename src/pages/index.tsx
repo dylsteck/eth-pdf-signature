@@ -12,6 +12,7 @@ import { useIsMounted } from '@/hooks/useIsMounted'
 import { FileUploader } from 'react-drag-drop-files';
 import { useState, useEffect } from 'react';
 import * as crypto from 'crypto';
+import { degrees, PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 
 // Currently only supports PDF file type
 const fileTypes = ["PDF"];
@@ -63,14 +64,59 @@ export default function Home() {
     reader.readAsArrayBuffer(file);
   }
 
+  const signPDF = async () => {
+
+    if (!file || !signature) {
+      return;
+    }
+  
+    const reader = new FileReader();
+  
+    reader.onload = async () => {
+      // Load PDF from Uint8Array
+      const fileData = new Uint8Array(reader.result as ArrayBuffer);
+      const pdfDoc = await PDFDocument.load(fileData);
+  
+      // Initialize vars for PDF manipulation
+      const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
+      const pages = pdfDoc.getPages();
+      const firstPage = pages[0];
+      const { width, height } = firstPage.getSize();
+      const message = `I, ${ensName ?? address}, am signing this PDF at time ${timestamp}:\n${signature}`;
+  
+      // Add message to the top left corner of the PDF's first page
+      firstPage.drawText(message, {
+        x: 10,
+        y: height - 20,
+        size: 8,
+        font: helveticaFont,
+        color: rgb(0, 0, 0),
+      });
+      
+      // Name the PDF and save it locally
+      const pdfBytes = await pdfDoc.save();
+      const blob = new Blob([pdfBytes], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      const fileName = file?.name ? `${file.name.replace(/\.pdf$/, '')}_signed.pdf` : `${timestamp}_signed.pdf`;
+      link.href = url;
+      link.download = fileName;
+      link.target = "_blank";
+      link.click();
+      URL.revokeObjectURL(url);
+    };
+  
+    reader.readAsArrayBuffer(file);
+  };
+  
   return (
     <>
       <Head>
-        <title>Web3 Starter</title>
-        <meta name="description" content="" />
+        <title>Web3 Sign a PDF</title>
+        <meta name="description" content="This application allows you to attach a unique cryptographic signature to the top of a PDF file." />
         <meta property="og:image" content="" />
-        <meta property="og:title" content="" />
-        <meta property="og:description" content="" />
+        <meta property="og:title" content="Web3 Sign a PDF" />
+        <meta property="og:description" content="This application allows you to attach a unique cryptographic signature to the top of a PDF file." />
       </Head>
 
       <Layout>
@@ -125,6 +171,7 @@ export default function Home() {
           <button
             type="button"
             disabled={!isMounted || !address || !file || !hashValue || !signature}
+            onClick={() => signPDF()}
             className="disabled:bg-gray-400 disabled:hover:cursor-not-allowed max-w-3xl min-w-xl rounded-md bg-blue-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
           >
             Affix to PDF
