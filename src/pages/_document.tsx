@@ -8,8 +8,6 @@ export default class MyDocument extends Document {
     return (
       <Html lang="en">
         <Head>
-          <meta property="twitter:creator" content="@gregskril" />
-          <meta property="twitter:card" content="summary_large_image" />
         </Head>
         <body>
           <Main />

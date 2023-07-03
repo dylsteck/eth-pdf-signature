@@ -42,7 +42,7 @@ export function Footer() {
         <Link href="https://www.tayyabh.com/" target="_blank">
           Tayyab Hussain
         </Link>
-        <Link href="https://gregskril.com/" target="_blank">
+        <Link href="https://dylansteck.com" target="_blank">
           Dylan Steck
         </Link>
       </Links>
