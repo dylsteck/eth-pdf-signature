@@ -5,7 +5,7 @@ import type { AppProps } from 'next/app'
 import { WagmiConfig } from 'wagmi'
 
 import { chains, wagmiConfig } from '@/providers'
-import '@/styles/style.scss'
+import '@/styles/style.css'
 
 export default function App({ Component, pageProps }: AppProps) {
   return (

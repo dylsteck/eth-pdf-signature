@@ -21,7 +21,8 @@ export const Layout = styled.div`
 
 export const Container = styled.div`
   width: 100%;
-  max-width: 35rem;
+  max-width: 75%;
+  height; 100%;
   margin-left: auto;
   margin-right: auto;
 `
