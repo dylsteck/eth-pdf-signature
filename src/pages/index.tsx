@@ -2,16 +2,22 @@ import Head from 'next/head'
 import { 
   useAccount, 
   useEnsName,
-  useSignMessage
+  useSignMessage,
+  useNetwork,
 } from 'wagmi'
 
+import {
+  hashPDFData,
+  verifySignature,
+} from '@/utils/crypto_helpers';
+
+import { LoadingSpinner } from '@/components/loadingSpinner';
 import { Footer } from '@/components/Footer'
 import { Nav } from '@/components/Nav'
 import { Container, Layout } from '@/components/atoms'
 import { useIsMounted } from '@/hooks/useIsMounted'
 import { FileUploader } from 'react-drag-drop-files';
 import { useState, useEffect } from 'react';
-import * as crypto from 'crypto';
 import { degrees, PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 
 // Currently only supports PDF file type
@@ -22,9 +28,12 @@ export default function Home() {
   const [hashValue, setHashValue] = useState('');
   const [ preSignatureString, setPreSignatureString ] = useState(''); // [ensName ?? address] + [timestamp] + [hashValue]
   const [ signature, setSignature ] = useState('');
+  const [ isAffixing, setIsAffixing ] = useState(false); 
   const [timestamp, setTimestamp ] = useState(Date.now());
   const isMounted = useIsMounted() // Prevent Next.js hydration errors
   const { address } = useAccount() // Get the user's connected wallet address
+  const { chain } = useNetwork()
+
 
   // Update timestamp every 10 seconds, easily adjustable
   useEffect(() => {
@@ -35,13 +44,15 @@ export default function Home() {
     return () => clearInterval(intervalId);
   }, []);
 
+  
+
   const { data: ensName } = useEnsName({
     address,
     chainId: 1, // We always want to use ETH mainnet for ENS lookups
   })
 
   // Hook for signing message
-  const { signMessage } = useSignMessage({
+  const { signMessage, isLoading: signatureLoading } = useSignMessage({
     message: preSignatureString,
     onSuccess(data) {
       setSignature(data);
@@ -70,6 +81,8 @@ export default function Home() {
       return;
     }
   
+    setIsAffixing(true);
+
     const reader = new FileReader();
   
     reader.onload = async () => {
@@ -98,12 +111,14 @@ export default function Home() {
       const blob = new Blob([pdfBytes], { type: "application/pdf" });
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
-      const fileName = file?.name ? `${file.name.replace(/\.pdf$/, '')}_signed.pdf` : `${timestamp}_signed.pdf`;
+      const fileName: string = file?.name ? `${file.name.replace(/\.pdf$/, '')}_signed.pdf` : `${timestamp}_signed.pdf`;
       link.href = url;
       link.download = fileName;
       link.target = "_blank";
       link.click();
       URL.revokeObjectURL(url);
+
+      setIsAffixing(false);
     };
   
     reader.readAsArrayBuffer(file);
@@ -126,9 +141,17 @@ export default function Home() {
           style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}
         >
           <h1>Sign a PDF w/ your Wallet</h1>
+          {isMounted && chain?.id !== 1 ? 
+            <p className='text-md text-red-500'>
+              Please connect to the Ethereum mainnet to use this application.
+            </p>
+            :
+            null}
+          <p className='italic text-blue-600 underline hover:cursor-pointer'>Verify a Signature (Coming soon...)</p>
           <p className=' text-md'>
             This application allows you to attach a unique cryptographic signature to the top of a PDF file. This signature can be used to verify the authenticity of the file and the identity of the signer. We currently support PDF files only.
           </p>
+
           <FileUploader
             handleChange={handleFileChange}
             name="file"
@@ -136,24 +159,26 @@ export default function Home() {
             multiple={false}
             
           />
+
           { file ?
-              <p className='text-green-500'>File uploaded successfully!</p> :
+              <p className='text-green-600'>File uploaded successfully!</p> :
               null 
           }
+
           <p>
-            <span className='font-bold'>Hash of file (SHA-256):</span> <span className='font-code bg-gray-200 text-sm'>{hashValue}</span>
+            <span className='font-bold'>Hash of file (SHA-256):</span> <span className='font-code  text-sm'>{hashValue}</span>
           </p>
-          {/* If the page is hydrated and the user is connected, show their address */}
+          {/* If the page is hydrated and the user is connected, show the rest of the page */}
           {isMounted && address ? (
             <>
-            <p className='font-bold'>String to be hashed:</p>
+            <p className='font-bold'>String to be signed:</p>
             <p>
               {/* I'm happy to change the language here if we think of something better. */}
-              I, <span className='font-code bg-gray-200 text-sm'>{ensName ?? address}</span>, verify that at time <span className='font-code bg-gray-200 text-sm'>{timestamp}</span> I am signing the following hash and affixing it to this PDF file: <span className='font-code bg-gray-200 text-sm'>{hashValue}</span>
+              I, <span className='font-code text-sm'>{ensName ?? address}</span>, verify that at time <span className='font-code  text-sm'>{timestamp}</span> I am signing the following hash and affixing it to this PDF file: <span className='font-code bg-gray-200 text-sm'>{hashValue}</span>
             </p>
             <p>
               <br/>
-              <span className='font-bold'>Signature:</span> <span className='font-code bg-gray-200 text-sm break-words'>{signature}</span>
+              <span className='font-bold'>Signature:</span> <span className='font-code text-sm break-words'>{signature}</span>
             </p>
             </>
           ) : (
@@ -164,17 +189,17 @@ export default function Home() {
             type="button"
             onClick={() => signMessage()}
             disabled={!isMounted || !address || !file || !hashValue}
-            className="disabled:bg-gray-400 disabled:hover:cursor-not-allowed max-w-3xl min-w-xl rounded-md bg-blue-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+            className="flex flex-row disabled:bg-gray-400 disabled:hover:cursor-not-allowed max-w-3xl min-w-xl rounded-md bg-blue-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
           >
-            Sign Message
+            {!signatureLoading ? "Sign Message" : <><LoadingSpinner /> Signing... </>}
           </button>
           <button
             type="button"
             disabled={!isMounted || !address || !file || !hashValue || !signature}
             onClick={() => signPDF()}
-            className="disabled:bg-gray-400 disabled:hover:cursor-not-allowed max-w-3xl min-w-xl rounded-md bg-blue-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+            className="flex flex-row disabled:bg-gray-400 disabled:hover:cursor-not-allowed max-w-3xl min-w-xl rounded-md bg-blue-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
           >
-            Affix to PDF
+            {!isAffixing ? "Affix to PDF" : <><LoadingSpinner /> Affixing...</>}
           </button>
           </div>
         </Container>
@@ -185,9 +210,3 @@ export default function Home() {
 }
 
 
-function hashPDFData(data: Uint8Array) {
-  const hash = crypto.createHash('sha256');
-  hash.update(data);
-  const hashValue = hash.digest('hex');
-  return hashValue;
-}
