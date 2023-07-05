@@ -125,7 +125,7 @@ export default function Home() {
       const blob = new Blob([pdfBytes], { type: "application/pdf" });
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
-      const fileName: string = file?.name ? `${file.name.replace(/\.pdf$/, '')}_signed.pdf` : `${timestamp}_signed.pdf`;
+      const fileName: string = (file as any)?.name ? `${(file as any).name.replace(/\.pdf$/, '')}_signed.pdf` : `${timestamp}_signed.pdf`;
       link.href = url;
       link.download = fileName;
       link.target = "_blank";
