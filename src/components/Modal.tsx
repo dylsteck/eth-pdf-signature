@@ -20,7 +20,7 @@ export const Modal: React.FC<ModalProps> = ({ title, content, close, changeSelec
       <div className="fixed inset-0 flex items-center justify-center z-50">
         <div className="bg-white p-8 rounded-lg shadow-lg">
           <h2 className="text-xl font-bold mb-4">Success!</h2>
-          <p>Where on the PDF do you want the signature to be placed?</p>
+          <p className="mb-2">Where on the PDF do you want the signature to be placed?</p>
           <div>
             <div>
               <input
@@ -30,7 +30,7 @@ export const Modal: React.FC<ModalProps> = ({ title, content, close, changeSelec
                 checked={selectedValue === 'top'}
                 onChange={handleRadioChange}
               />
-              <label>Top</label>
+              <label className="ml-2">Top</label>
             </div>
 
             <div>
@@ -41,7 +41,7 @@ export const Modal: React.FC<ModalProps> = ({ title, content, close, changeSelec
                 checked={selectedValue === 'bottom'}
                 onChange={handleRadioChange}
               />
-              <label>Bottom</label>
+              <label className="ml-2">Bottom</label>
             </div>
           </div>
           <button
