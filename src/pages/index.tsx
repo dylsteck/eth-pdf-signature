@@ -19,6 +19,7 @@ import { useIsMounted } from '@/hooks/useIsMounted'
 import { FileUploader } from 'react-drag-drop-files';
 import { useState, useEffect } from 'react';
 import { degrees, PDFDocument, rgb, StandardFonts } from 'pdf-lib';
+import { Modal } from '@/components/Modal';
 
 // Currently only supports PDF file type
 const fileTypes = ["PDF"];
@@ -29,6 +30,8 @@ export default function Home() {
   const [ preSignatureString, setPreSignatureString ] = useState(''); // [ensName ?? address] + [timestamp] + [hashValue]
   const [ signature, setSignature ] = useState('');
   const [ isAffixing, setIsAffixing ] = useState(false); 
+  const [isModal, setIsModal] = useState(false);
+  const [signaturePosition, setSignaturePostion] = useState('top');
   const [timestamp, setTimestamp ] = useState(Date.now());
   const isMounted = useIsMounted() // Prevent Next.js hydration errors
   const { address } = useAccount() // Get the user's connected wallet address
@@ -58,6 +61,16 @@ export default function Home() {
       setSignature(data);
     }
   });
+
+  const signAndShowModal = () => {
+    signMessage();
+    setIsModal(true);
+  };
+
+  const signPDFAndCloseModal = () => {
+    signPDF();
+    setIsModal(false);
+  }
 
   // Handle file upload, as well as set preSignatureString and hashValue once file is uploaded
   const handleFileChange = (file: any) => {
@@ -95,12 +108,13 @@ export default function Home() {
       const pages = pdfDoc.getPages();
       const firstPage = pages[0];
       const { width, height } = firstPage.getSize();
-      const message = `I, ${ensName ?? address}, am signing this PDF at time ${timestamp}:\n${signature}`;
+      const message = `${ensName ?? address} signed ${hashValue} at unix-time ${timestamp}`;
   
-      // Add message to the top left corner of the PDF's first page
+      // Add message to the top left/bottom left corner of the PDF's first page
+
       firstPage.drawText(message, {
         x: 10,
-        y: height - 20,
+        y: signaturePosition === 'top' ? height - 20 : 20,
         size: 8,
         font: helveticaFont,
         color: rgb(0, 0, 0),
@@ -173,12 +187,7 @@ export default function Home() {
             <>
             <p className='font-bold'>String to be signed:</p>
             <p>
-              {/* I'm happy to change the language here if we think of something better. */}
-              I, <span className='font-code text-sm'>{ensName ?? address}</span>, verify that at time <span className='font-code  text-sm'>{timestamp}</span> I am signing the following hash and affixing it to this PDF file: <span className='font-code bg-gray-200 text-sm'>{hashValue}</span>
-            </p>
-            <p>
-              <br/>
-              <span className='font-bold'>Signature:</span> <span className='font-code text-sm break-words'>{signature}</span>
+              {`${ensName ?? address} signed ${hashValue} at unix-time ${timestamp}`}
             </p>
             </>
           ) : (
@@ -187,20 +196,17 @@ export default function Home() {
           <div className='flex flex-row justify-around'>
           <button
             type="button"
-            onClick={() => signMessage()}
+            onClick={() => signAndShowModal()}
             disabled={!isMounted || !address || !file || !hashValue}
             className="flex flex-row disabled:bg-gray-400 disabled:hover:cursor-not-allowed max-w-3xl min-w-xl rounded-md bg-blue-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
           >
-            {!signatureLoading ? "Sign Message" : <><LoadingSpinner /> Signing... </>}
+            {!signatureLoading ? "Sign and Affix" : <><LoadingSpinner /> Loading... </>}
           </button>
-          <button
-            type="button"
-            disabled={!isMounted || !address || !file || !hashValue || !signature}
-            onClick={() => signPDF()}
-            className="flex flex-row disabled:bg-gray-400 disabled:hover:cursor-not-allowed max-w-3xl min-w-xl rounded-md bg-blue-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
-          >
-            {!isAffixing ? "Affix to PDF" : <><LoadingSpinner /> Affixing...</>}
-          </button>
+          {isModal && <Modal 
+                        title="Confirm" 
+                        content="Content" 
+                        close={() => signPDFAndCloseModal()}
+                        changeSelectedValue={(value) => setSignaturePostion(value)} /> }
           </div>
         </Container>
         <Footer />
