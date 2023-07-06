@@ -12,6 +12,7 @@
     "prettier:fix": "prettier --write src/**/*"
   },
   "dependencies": {
+    "@heroicons/react": "^2.0.18",
     "@rainbow-me/rainbowkit": "^1.0.4",
     "ethers": "^6.6.2",
     "next": "13.4.1",

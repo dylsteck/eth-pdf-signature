@@ -16,5 +16,7 @@ export function verifySignature(
   signerPublicKey: string
 ): boolean {
   const recoveredAddress = ethers.verifyMessage(message, signature);
+  console.log('recoveredAddress: ', recoveredAddress)
+  console.log('signerPublicKey: ', signerPublicKey)
   return recoveredAddress.toLowerCase() === signerPublicKey.toLowerCase();
 }
