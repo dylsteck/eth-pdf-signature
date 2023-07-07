@@ -19,7 +19,9 @@ import { useIsMounted } from '@/hooks/useIsMounted'
 import { FileUploader } from 'react-drag-drop-files';
 import { useState, useEffect } from 'react';
 import { degrees, PDFDocument, rgb, StandardFonts } from 'pdf-lib';
-import { Modal } from '@/components/Modal';
+import { DownloadModal } from '@/components/downloadModal';
+import { VerificationModal } from '@/components/verificationModal';
+import { wrapText } from '@/utils/pdf_helpers';
 
 // Currently only supports PDF file type
 const fileTypes = ["PDF"];
@@ -30,9 +32,11 @@ export default function Home() {
   const [ preSignatureString, setPreSignatureString ] = useState(''); // [ensName ?? address] + [timestamp] + [hashValue]
   const [ signature, setSignature ] = useState('');
   const [ isAffixing, setIsAffixing ] = useState(false); 
-  const [isModal, setIsModal] = useState(false);
+  const [isDownloadModal, setIsDownloadModal] = useState(false);
+  const [ isVerificationModal, setIsVerificationModal ] = useState(false);
   const [signaturePosition, setSignaturePostion] = useState('top');
   const [timestamp, setTimestamp ] = useState(Date.now());
+  const [ finalMessage, setFinalMessage ] = useState(''); 
   const isMounted = useIsMounted() // Prevent Next.js hydration errors
   const { address } = useAccount() // Get the user's connected wallet address
   const { chain } = useNetwork()
@@ -57,21 +61,23 @@ export default function Home() {
   // Hook for signing message
   const { signMessage, isLoading: signatureLoading } = useSignMessage({
     message: preSignatureString,
+    onMutate(args) {
+      setFinalMessage(args.message);
+    },
     onSuccess(data) {
       setSignature(data);
+      // Show modal after successful sign
+      setIsDownloadModal(true);
     }
   });
 
-  const signAndShowModal = () => {
-    signMessage();
-    setIsModal(true);
-  };
 
   const signPDFAndCloseModal = () => {
     signPDF();
-    setIsModal(false);
+    setIsDownloadModal(false);
   }
 
+  // TODO: Should be able to refactor below
   // Handle file upload, as well as set preSignatureString and hashValue once file is uploaded
   const handleFileChange = (file: any) => {
     setFile(file);
@@ -82,7 +88,7 @@ export default function Home() {
       const fileData = new Uint8Array(reader.result as ArrayBuffer);
       const hashValue = hashPDFData(fileData);
       setHashValue(hashValue);
-      setPreSignatureString("I, " + (ensName ?? address!) + ", verify that at time "  +  timestamp + " I am signing the following hash and affixing it to this PDF file: " + hashValue);
+      setPreSignatureString(`${ensName ?? address} signed ${hashValue} at unix-time ${timestamp}`);
     };
 
     reader.readAsArrayBuffer(file);
@@ -108,17 +114,36 @@ export default function Home() {
       const pages = pdfDoc.getPages();
       const firstPage = pages[0];
       const { width, height } = firstPage.getSize();
-      const message = `${ensName ?? address} signed ${hashValue} at unix-time ${timestamp}`;
-  
-      // Add message to the top left/bottom left corner of the PDF's first page
+      const unsignedMessage = finalMessage;
+      const signedMessage = `Signature: ${signature}`
 
-      firstPage.drawText(message, {
+      // The Signature stretches beyond the page, therefore you need to do some line-wrapping to make it work
+      const wrappedSignedMessage: string[] = wrapText(signedMessage, width - 20, helveticaFont);
+
+      // Add message to the top left/bottom left corner of the PDF's first page
+      firstPage.drawText(unsignedMessage, {
         x: 10,
-        y: signaturePosition === 'top' ? height - 20 : 20,
+        y: signaturePosition === 'top' ? height - 20 : 50,
         size: 8,
         font: helveticaFont,
         color: rgb(0, 0, 0),
       });
+
+      let newLineYPositionAdjustment = 0;
+
+      for (const line of wrappedSignedMessage) {
+
+        firstPage.drawText(line, {
+          x: 10,
+          y: signaturePosition === 'top' ? (height - 35 - newLineYPositionAdjustment) : 35 - newLineYPositionAdjustment,
+          size: 8,
+          font: helveticaFont,
+          color: rgb(0, 0, 0),
+        });
+
+        newLineYPositionAdjustment += 12;
+
+      }
       
       // Name the PDF and save it locally
       const pdfBytes = await pdfDoc.save();
@@ -155,14 +180,19 @@ export default function Home() {
           style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}
         >
           <h1>Sign a PDF w/ your Wallet</h1>
-          {isMounted && chain?.id !== 1 ? 
+          {isMounted && address && chain?.id !== 1 ? 
             <p className='text-md text-red-500'>
               Please connect to the Ethereum mainnet to use this application.
             </p>
             :
             null}
-          <p className='italic text-blue-600 underline hover:cursor-pointer'>Verify a Signature (Coming soon...)</p>
-          <p className=' text-md'>
+          <button 
+            className='mr-auto italic text-blue-600 underline hover:cursor-pointer'
+            // onClick={() => setIsVerificationModal(true)}
+          >
+            Verify a Signature (Coming soon...)
+          </button>
+          <p className='text-md'>
             This application allows you to attach a unique cryptographic signature to the top of a PDF file. This signature can be used to verify the authenticity of the file and the identity of the signer. We currently support PDF files only.
           </p>
 
@@ -189,6 +219,8 @@ export default function Home() {
             <p>
               {`${ensName ?? address} signed ${hashValue} at unix-time ${timestamp}`}
             </p>
+            <p className='font-bold'>Signature:</p>
+            <p className='font-code text-sm break-words'>{signature}</p>
             </>
           ) : (
             <p className='text-blue-500 italic'>Please connect wallet to use complete functionality.</p>
@@ -196,17 +228,20 @@ export default function Home() {
           <div className='flex flex-row justify-around'>
           <button
             type="button"
-            onClick={() => signAndShowModal()}
+            onClick={() => signMessage()}
             disabled={!isMounted || !address || !file || !hashValue}
-            className="flex flex-row disabled:bg-gray-400 disabled:hover:cursor-not-allowed max-w-3xl min-w-xl rounded-md bg-blue-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+            className="flex flex-row ml-auto disabled:bg-gray-400 disabled:hover:cursor-not-allowed max-w-3xl min-w-xl rounded-md bg-blue-600 px-16 py-2.5 text-sm font-semibold text-white shadow-md hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
           >
             {!signatureLoading ? "Sign and Affix" : <><LoadingSpinner /> Loading... </>}
           </button>
-          {isModal && <Modal 
+          {isDownloadModal && <DownloadModal 
                         title="Confirm" 
                         content="Content" 
-                        close={() => signPDFAndCloseModal()}
+                        sign={signPDFAndCloseModal}
+                        close={() => setIsDownloadModal(false)}
                         changeSelectedValue={(value) => setSignaturePostion(value)} /> }
+          {isVerificationModal && <VerificationModal
+                        close={() => setIsVerificationModal(false)} /> }
           </div>
         </Container>
         <Footer />
