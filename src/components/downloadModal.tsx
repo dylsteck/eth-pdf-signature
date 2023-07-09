@@ -4,7 +4,6 @@ import { ArrowDownTrayIcon, XMarkIcon } from '@heroicons/react/24/outline';
 type ModalProps = {
     title: string;
     content: string;
-    sign: () => void;
     close: () => void;
     changeSelectedValue: (value: string) => void;
   };
@@ -49,12 +48,6 @@ export const DownloadModal: React.FC<ModalProps> = ({ title, content, close, cha
               <label className="ml-2">Bottom</label>
             </div>
           </div>
-          {/* <button
-            className="mt-4 px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400 shadow-md"
-            onClick={close}
-          >
-            Confirm & Download Signed PDF
-          </button> */}
           <button
           type="button"
           onClick={close}

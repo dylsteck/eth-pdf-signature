@@ -237,8 +237,7 @@ export default function Home() {
           {isDownloadModal && <DownloadModal 
                         title="Confirm" 
                         content="Content" 
-                        sign={signPDFAndCloseModal}
-                        close={() => setIsDownloadModal(false)}
+                        close={signPDFAndCloseModal}
                         changeSelectedValue={(value) => setSignaturePostion(value)} /> }
           {isVerificationModal && <VerificationModal
                         close={() => setIsVerificationModal(false)} /> }
