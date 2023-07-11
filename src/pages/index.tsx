@@ -23,7 +23,6 @@ export default function Home() {
   const [hashValue, setHashValue] = useState("");
   const [preSignatureString, setPreSignatureString] = useState(""); // [ensName ?? address] + [timestamp] + [hashValue]
   const [signature, setSignature] = useState("");
-  const [isAffixing, setIsAffixing] = useState(false);
   const [isDownloadModal, setIsDownloadModal] = useState(false);
   const [isVerificationModal, setIsVerificationModal] = useState(false);
   const [signaturePosition, setSignaturePostion] = useState("top");
@@ -89,7 +88,6 @@ export default function Home() {
       return;
     }
 
-    setIsAffixing(true);
 
     const reader = new FileReader();
 
@@ -153,7 +151,6 @@ export default function Home() {
       link.click();
       URL.revokeObjectURL(url);
 
-      setIsAffixing(false);
     };
 
     reader.readAsArrayBuffer(file);
@@ -167,11 +164,12 @@ export default function Home() {
           Please connect to the Ethereum mainnet to use this application.
         </p>
       ) : null}
-      <button
+      <a
+        href="/verify"
         className="mr-auto italic text-blue-600 underline hover:cursor-pointer"
       >
-        Verify a Signature (Coming soon...)
-      </button>
+        Verify a Signature
+      </a>
       <p className="text-md">
         This application allows you to attach a unique cryptographic signature
         to the top of a PDF file. This signature can be used to verify the
@@ -225,7 +223,8 @@ export default function Home() {
           <DownloadModal
             title="Confirm"
             content="Content"
-            close={signPDFAndCloseModal}
+            close={() => setIsDownloadModal(false)}
+            signPDFAndCloseModal={signPDFAndCloseModal}
             changeSelectedValue={(value) => setSignaturePostion(value)}
           />
         )}

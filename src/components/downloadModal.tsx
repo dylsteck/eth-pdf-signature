@@ -5,10 +5,11 @@ type ModalProps = {
     title: string;
     content: string;
     close: () => void;
+    signPDFAndCloseModal: () => void;
     changeSelectedValue: (value: string) => void;
   };
 
-export const DownloadModal: React.FC<ModalProps> = ({ title, content, close, changeSelectedValue }) => {
+export const DownloadModal: React.FC<ModalProps> = ({ title, content, close, signPDFAndCloseModal, changeSelectedValue }) => {
 
   const [selectedValue, setSelectedValue] = useState('');
 
@@ -50,7 +51,7 @@ export const DownloadModal: React.FC<ModalProps> = ({ title, content, close, cha
           </div>
           <button
           type="button"
-          onClick={close}
+          onClick={signPDFAndCloseModal}
           disabled={selectedValue === ''}
           className="disabled:bg-gray-50 disabled:text-gray-600 disabled:hover:bg-gray-200 disabled:hover:cursor-not-allowed mt-6 inline-flex items-center gap-x-1.5 rounded-md bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-600 shadow-sm hover:bg-blue-100"
           >
