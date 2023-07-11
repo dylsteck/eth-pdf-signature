@@ -16,7 +16,7 @@ export default function Verify() {
         setShowVerification(true);
     }
 
-    const verifyDesc = `ou can verify a signature by pasting the message, signature, and the signer's public key below: `
+    const verifyDesc = `You can verify a signature by pasting the message, signature, and the signer's public key below: `
     return (
         <Layout>
         <h1>Verify a signed PDF</h1>
