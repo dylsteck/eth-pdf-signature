@@ -14,6 +14,7 @@ import { degrees, PDFDocument, rgb, StandardFonts } from "pdf-lib";
 import { DownloadModal } from "@/components/downloadModal";
 import { VerificationModal } from "@/components/verificationModal";
 import { wrapText } from "@/utils/pdf_helpers";
+import Link from "next/link";
 
 // Currently only supports PDF file type
 const fileTypes = ["PDF"];
@@ -164,12 +165,12 @@ export default function Home() {
           Please connect to the Ethereum mainnet to use this application.
         </p>
       ) : null}
-      <a
+      <Link
         href="/verify"
         className="mr-auto italic text-blue-600 underline hover:cursor-pointer"
       >
         Verify a Signature
-      </a>
+      </Link>
       <p className="text-md">
         This application allows you to attach a unique cryptographic signature
         to the top of a PDF file. This signature can be used to verify the

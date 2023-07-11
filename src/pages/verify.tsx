@@ -15,12 +15,14 @@ export default function Verify() {
         setVerificationStatus(verified);
         setShowVerification(true);
     }
+
+    const verifyDesc = `ou can verify a signature by pasting the message, signature, and the signer's public key below: `
     return (
         <Layout>
         <h1>Verify a signed PDF</h1>
         <div className='bg-white p-8 rounded-lg shadow-sm border border-gray-300'>
                 <h2 className='text-xl font-bold mb-4'>Verify a Signature</h2>
-                <p className='mb-4 text-md'>You can verify a signature by pasting the message, signature, and the signer's public key below: </p>
+                <p className='mb-4 text-md'>{verifyDesc}</p>
                 <p className="text-sm italic font-light">(Make sure to avoid any extra spaces on either end of the string, verification requires precision)</p>
                 <div className='flex flex-col'>
                     <div className='my-2'>

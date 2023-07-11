@@ -1,4 +1,5 @@
 import { ConnectButton } from '@rainbow-me/rainbowkit'
+import Link from 'next/link'
 import styled from 'styled-components'
 
 const Wrapper = styled.div`
@@ -17,7 +18,7 @@ const Title = styled.span`
 export function Nav() {
   return (
     <Wrapper>
-      <Title><a href="/">Web3 Sign a PDF</a></Title>
+      <Title><Link href="/">Web3 Sign a PDF</Link></Title>
       <ConnectButton chainStatus="none" showBalance={false} />
     </Wrapper>
   )
